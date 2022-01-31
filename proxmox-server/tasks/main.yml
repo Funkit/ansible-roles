@@ -1,0 +1,33 @@
+---
+# tasks file for ansible-proxmox
+
+# Remove cloud-init (necessary for Proxmox) and setup path for all users.
+- include_tasks: debian_initial_setup.yml
+
+# Update distribution if needed
+- include_tasks: update_debian_distribution.yml
+  when: update_distribution
+  vars:
+    old_debian_dist: "stretch"
+    new_debian_dist: "buster"
+
+# install LVM2 for proxmox
+- name: install LVM2
+  apt:
+    name: lvm2
+
+# as of sept 2020, known bug of the LVM2 package on most Linux distributions regarding event activation. As a consequence, it is disabled.
+- name: disable event activation for LVM2
+  lineinfile:
+    path: /etc/lvm/lvm.conf
+    regex: '.*event_activation.*'
+    line: "\tevent_activation = 0"
+
+# remove Proxmox enterprise repository. Should be put back when a support key is acquired to get access to this reposotory.
+- name: Remove file pve-entreprise
+  file:
+    path: /etc/apt/sources.list.d/pve-enterprise.list
+    state: absent
+
+# install Proxmox VE
+- include_tasks: install_proxmox_ve.yml

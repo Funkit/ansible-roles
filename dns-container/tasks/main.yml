@@ -1,0 +1,22 @@
+---
+- name: make sure the docker service is started
+  systemd:
+    name: docker
+    state: started
+    
+- name: read csv
+  community.general.read_csv:
+    path: "{{ csv_source }}"
+  register: equipment_info
+  delegate_to: 127.0.0.1
+  run_once: yes
+
+- name: remove container and related files if needed
+  include_tasks: rebuild.yml
+  when: rebuild
+
+- name: copy coredns files
+  include_tasks: copy_files.yml
+
+- name: start DNS container
+  include_tasks: run_container.yml

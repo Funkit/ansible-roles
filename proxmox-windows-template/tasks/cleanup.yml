@@ -1,0 +1,15 @@
+---
+# tasks file for ansible-proxmox-windows-template 
+- name: cleanup
+  block:
+    - name: Remove IDE CD Drives from the template
+      shell: "/usr/sbin/qm set {{ vm_template_vmid }} --delete ide1 --delete ide2 --delete ide3"
+    - name: Remove provision ISO from the server
+      file: 
+        path: "{{ pve_host_local_storage_path }}/template/iso/{{ vm_template_name }}_provision.iso"
+        state: absent
+    - name: Cleanup temp files used for provision ISO build
+      file:
+        path: "{{ temp_subfolder }}"
+        state: absent 
+  become: yes

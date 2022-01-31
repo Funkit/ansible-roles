@@ -1,0 +1,45 @@
+---
+- name: if delete_data is set, confirm with user that he want the folder deleted
+  pause:
+    prompt: "{{ ansible_hostname }}: the current data files will be deleted. Cancel now if needed, otherwise press enter"
+  when: delete_data | bool
+
+- name: stop old container if needed
+  community.general.docker_container:
+    name: "{{ container_name }}"
+    state: absent
+  when: delete_data | bool
+
+- name: delete old data folder if required
+  file:
+    path: "{{ data_folder }}"
+    state: absent
+  when: delete_data | bool
+
+- name: make sure the destination Prometheus folder exists
+  file:
+    path: "{{ prometheus_folder }}"
+    state: directory
+
+- name: make sure the destination data folder exists
+  file:
+    path: "{{ data_folder }}"
+    state: directory
+
+- name: copy external prometheus.yml file to the server
+  copy:
+    src: "{{ prometheus_configuration_file }}"
+    dest: "{{ prometheus_folder }}/prometheus.yml"
+
+- name: start container
+  community.general.docker_container:
+    name: "{{ container_name }}"
+    image: prom/prometheus
+    state: started
+    recreate: yes
+    restart: yes
+    volumes:
+      - "{{ data_folder }}:/data/prometheus"
+      - "{{ prometheus_folder }}:/etc/prometheus"
+    published_ports:
+      - "{{ prometheus_port }}:9090/tcp"

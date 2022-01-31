@@ -1,0 +1,18 @@
+#cloud-config
+users:
+  - default
+  - name: {{ ansible_env.USER }}
+    hostname: {{ hostvars[item].vm_name }}
+    gecos: default admin user
+    sudo: ALL=(ALL) NOPASSWD:ALL
+    groups: users
+    ssh_import_id: None
+    lock_passwd: false
+    ssh_authorized_keys:
+      - {{ public_ssh_key }}
+runcmd:
+  - newhostn="{{ hostvars[item].vm_name }}"
+  - hostn=$(cat /etc/hostname)
+  - sed -i "s/$hostn/$newhostn/g" /etc/hostname
+  - hostname $newhostn
+  - echo "{{ item }} $newhostn" >> /etc/hosts

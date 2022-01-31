@@ -1,0 +1,62 @@
+---
+# create VM and import cloud disk
+- name: create VM
+  shell:
+    cmd: "/usr/sbin/qm create {{ template_vmid }} --name {{ vm_template_name }} --sockets {{ vm_sockets }} --cores {{ vm_cores }} --memory {{ vm_ram_mb }} --scsihw virtio-scsi-pci --ostype {{ vm_os_type }} --agent {{ vm_guest_agent }}"
+  become: yes
+- name: add previously downloaded cloud image to the VM
+  shell:
+    cmd: "/usr/sbin/qm importdisk {{ template_vmid }} /tmp/{{ cloud_image_name }} {{ proxmox_storage }} --format qcow2"
+  become: yes
+- name: attach disk to scsi controller
+  shell:
+    cmd: "/usr/sbin/qm set {{ template_vmid }} --scsi0 {{ proxmox_storage }}:{{ template_vmid }}/vm-{{ template_vmid }}-disk-0.qcow2"
+  become: yes
+
+# set up network
+- name: set network - no VLAN
+  shell:
+    cmd: "/usr/sbin/qm set {{ template_vmid }} --net0 model=virtio,bridge={{ vm_network_bridge }},firewall=0"
+  become: yes
+  when: vlan_tag is not defined
+- name: set network - with VLAN
+  shell:
+    cmd: "/usr/sbin/qm set {{ template_vmid }} --net0 model=virtio,bridge={{ vm_network_bridge }},firewall=0,tag={{ vlan_tag }}"
+  become: yes
+  when: vlan_tag is defined
+- name: configure VM temp network
+  shell:
+    cmd: '/usr/sbin/qm set {{ template_vmid }} --ipconfig0 ip={{ temp_ip_address }}{{ temp_ip_address_mask }},gw={{ temp_gateway }}'
+  become: yes
+
+# set up cloud-init
+- name: add cloud-init drive
+  shell: 
+    cmd: "/usr/sbin/qm set {{ template_vmid }} --ide1 {{ proxmox_storage }}:cloudinit"
+  become: yes
+- name: create snippets directory if needed
+  file:
+    path: "{{ proxmox_storage_path }}/snippets"
+    state: directory
+  become: yes
+- name: template out cloud-init user data file - standard
+  template:
+    src: "{{ target_os }}/bootstrap-user-config.yml.j2"
+    dest: "{{ proxmox_storage_path }}/snippets/template-{{ template_vmid }}-cloud-init-user-config.yml"
+  become: yes
+  when: convert_to_template
+- name: template out cloud-init user data file - custom
+  template:
+    src: "{{ custom_cloud_init_path }}"
+    dest: "{{ proxmox_storage_path }}/snippets/template-{{ template_vmid }}-cloud-init-user-config.yml"
+  become: yes
+  when: not convert_to_template
+- name: add cloud-init user data to the VM
+  shell:
+    cmd: '/usr/sbin/qm set {{ template_vmid }} --cicustom "user={{ proxmox_storage }}:snippets/template-{{ template_vmid }}-cloud-init-user-config.yml"'
+  become: yes
+
+- name: set boot order
+  shell: 
+    cmd: '/usr/sbin/qm set {{ template_vmid }} --boot "order={{ default_boot_order }}"'
+  become: yes 

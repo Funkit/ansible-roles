@@ -1,0 +1,12 @@
+#cloud-config
+packages:
+  - epel-release
+  - python3
+runcmd:
+  - [ sh, -c, alternatives --set python /usr/bin/python3 ]
+power_state:
+  delay: "+1"
+  mode: poweroff
+  message: Bye Bye
+  timeout: 200
+  condition: True

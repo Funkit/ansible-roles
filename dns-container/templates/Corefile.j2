@@ -1,0 +1,9 @@
+. {
+  forward . {{ general_dns }} {
+    except {{ zones_list_string }}
+  }
+
+  hosts /root/host_file {{ zones_list_string }} {
+    ttl {{ dns_record_ttl_sec }}
+  }
+}

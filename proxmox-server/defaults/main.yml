@@ -1,0 +1,4 @@
+---
+# defaults file for ansible-proxmox
+proxmox_url: http://download.proxmox.com/debian
+proxmox_gpg_key_name: proxmox-ve-release-6.x.gpg

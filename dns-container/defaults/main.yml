@@ -1,0 +1,8 @@
+---
+container_name: dns
+coredns_folder: /opt/coredns
+dns_port: 53
+dns_record_ttl_sec: 3600
+general_dns: "8.8.8.8 1.1.1.1"
+rebuild: yes
+zones_list: []

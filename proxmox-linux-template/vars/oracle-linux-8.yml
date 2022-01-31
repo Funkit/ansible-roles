@@ -1,0 +1,6 @@
+---
+cloud_image_name: oracle-linux-disk
+cloud_image_url: https://yum.oracle.com/templates/OracleLinux/OL8/u3/x86_64/OL8U3_x86_64-olvm-b72.qcow2
+oci_repo_name: oracle-linux-ol8.repo
+uek_repo_name: uek-ol8.repo
+vm_template_name: oracle-linux-8-template

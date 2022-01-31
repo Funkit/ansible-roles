@@ -1,0 +1,68 @@
+---
+- include_tasks: variables.yml
+
+- name: check if the VM template already exists
+  shell: 
+    cmd: "/usr/bin/pvesh get /cluster/resources --type vm | grep 'qemu/{{ template_vmid }}'"
+  register: command_output
+  ignore_errors: yes
+  become: yes
+- name: register variable to check if we are to proceed with creating the template
+  set_fact:
+    build_or_rebuild_template: "{{((command_output.rc == 0) and rebuild) or (command_output.rc == 1)}}"
+- name: ask for confirmation if a VM is to be deleted when the VMID is taken and rebuild set to yes
+  pause:
+    prompt: "For hypervisor {{ hostvars[item]['ansible_hostname'] }}, you have set 'rebuild' to yes for the template with the VMID {{ hostvars[item]['template_vmid'] }}. A VM with the same ID already exists; it will be destroyed. Abort if that is not what you want to do"
+  when: (hostvars[item]['command_output'].rc == 0) and ((hostvars[item]['rebuild'] is defined) and hostvars[item]['rebuild'])
+  with_items: "{{ play_hosts }}"
+
+- name: tell the user nothing is done if the VMID is already taken and rebuild set to no
+  debug:
+    msg: "For hypervisor {{ ansible_hostname }}, rebuild is set to no, and the chosen template VMID {{ template_vmid }} is already taken. nothing will be done on this host."
+  when: (command_output.rc == 0) and (not rebuild)
+
+# The remaining tasks will only run if the template does not exist yet and you do not want to recreate
+
+- name: download cloud image on the controller, copy it on the hypervisors
+  include_tasks: get_image.yml
+  when: build_or_rebuild_template
+
+- name: delete old vm if needed
+  include_tasks: delete_vm.yml 
+  when: (command_output.rc == 0) and rebuild
+
+- name: create, customize VM
+  include_tasks: create_vm.yml 
+  when: build_or_rebuild_template
+  
+- name: start VM
+  shell:
+    cmd: "/usr/sbin/qm start {{ template_vmid }}"
+  become: yes
+  when: build_or_rebuild_template
+
+- name: wait for cloud-init configuration to complete
+  shell:
+    cmd: "/usr/sbin/qm wait {{ template_vmid }}"   
+  async: "{{ cloud_init_pause_seconds }}"
+  poll: 10
+  become: yes
+  when: build_or_rebuild_template
+
+- name: turn VM into template if requested
+  shell:
+    cmd: "/usr/sbin/qm set {{ template_vmid }} --template 1"
+  become: yes
+  when: convert_to_template and build_or_rebuild_template
+
+# This step is necessary otherwise, when cloning through the interface, the bootstrap cloud-init is triggered and the machine will shut down for the first boot.
+- name: replace cloud-init user file
+  copy:
+    src: post-bootstrap-user-config.yml
+    dest: "{{ proxmox_storage_path }}/snippets/template-{{ template_vmid }}-cloud-init-user-config.yml"
+  become: yes
+  when: build_or_rebuild_template
+
+- name: cleanup unused files
+  include_tasks: cleanup.yml
+  when: build_or_rebuild_template

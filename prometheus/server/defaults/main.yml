@@ -1,0 +1,6 @@
+---
+delete_data: no
+prometheus_folder: /opt/prometheus
+prometheus_port: 9090
+data_folder: /opt/prometheus/data
+container_name: prometheus

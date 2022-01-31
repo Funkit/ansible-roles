@@ -1,0 +1,9 @@
+---
+# Variable configuration.
+- name: Include OS-specific variables (CentOS).
+  include_vars: "centos-8.yml"
+  when: target_os == 'centos'
+
+- name: Include OS-specific variables (Oracle Linux).
+  include_vars: "oracle-linux-8.yml"
+  when: target_os == 'oracle-linux'

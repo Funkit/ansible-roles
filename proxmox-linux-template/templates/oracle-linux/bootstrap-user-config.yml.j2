@@ -1,0 +1,13 @@
+#cloud-config
+packages:
+  - python3
+runcmd:
+  - [ sh, -c, alternatives --set python /usr/bin/python3 ]
+  - sed -i 's/$ociregion//g' "/etc/yum.repos.d/{{ oci_repo_name }}"
+  - sed -i 's/$ociregion//g' "/etc/yum.repos.d/{{ uek_repo_name }}"
+power_state:
+  delay: "+1"
+  mode: poweroff
+  message: Bye Bye
+  timeout: 200
+  condition: True

@@ -1,0 +1,42 @@
+---
+- name: Update /etc/hosts file to add entry for the Proxmox host
+  lineinfile:
+    dest: /etc/hosts
+    regexp: '.*{{ ansible_hostname }}.*'
+    line: '{{ ansible_default_ipv4.address }} {{ ansible_hostname }}'
+    state: present
+
+- name: Download key
+  get_url:
+    url: "{{ proxmox_url }}/{{ proxmox_gpg_key_name }}"
+    dest: "/etc/apt/trusted.gpg.d/{{ proxmox_gpg_key_name }}"
+
+- name: Update /apt/sourcelist
+  lineinfile:
+    dest: /etc/apt/sources.list.d/pve-install-repo.list
+    line: "deb {{ proxmox_url }}/pve {{ target_debian_dist }} pve-no-subscription"
+    state: present
+    create: yes
+
+- name: Remove pve-entreprise file
+  file:
+    path: /etc/apt/sources.list.d/pve-enterprise.list
+    state: absent
+
+- name: Update APT
+  apt:
+    update_cache: yes
+
+- name: Upgrade installed packages
+  apt:
+    only_upgrade: yes
+
+- name: install postfix through a role
+  import_role:
+    name: ansible-role-postfix
+
+- name: Install proxmox-ve and related packages
+  apt:
+    pkg:
+    - proxmox-ve
+    - open-iscsi

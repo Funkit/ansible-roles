@@ -1,0 +1,17 @@
+---
+- name: download image on the controller
+  block:
+    - name: make sure the target folder for image download exists
+      file:
+        path: images
+        state: directory
+    - name: download cloud image if not available
+      get_url:
+        url: "{{ cloud_image_url }}"
+        dest: "images/{{ cloud_image_name }}"
+  delegate_to: 127.0.0.1
+  run_once: yes
+- name: copy the cloud image to the hypervisor
+  copy:
+    src: "images/{{ cloud_image_name }}"
+    dest: "/tmp/{{ cloud_image_name }}"

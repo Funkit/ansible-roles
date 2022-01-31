@@ -1,0 +1,12 @@
+- name: download exporter
+  get_url:
+    url: "https://github.com/prometheus/node_exporter/releases/download/v{{ exporter_version }}/node_exporter-{{ exporter_version }}.linux-amd64.tar.gz"
+    dest: "{{ playbook_dir }}"
+- name: make sure tar is installed
+  package:
+    name: tar
+  become: yes
+- name: extract the executable
+  unarchive:
+    src: "node_exporter-{{ exporter_version }}.linux-amd64.tar.gz"
+    dest: "{{ playbook_dir }}"

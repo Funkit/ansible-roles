@@ -1,0 +1,14 @@
+---
+- name: start coredns
+  community.general.docker_container:
+    name: "{{ container_name }}"
+    image: coredns/coredns
+    command: -conf /root/Corefile
+    state: started
+    recreate: yes
+    restart: yes
+    restart_policy: always
+    published_ports:
+      - "{{ dns_port }}:53/udp"
+    volumes:
+      - "{{ coredns_folder }}:/root/"

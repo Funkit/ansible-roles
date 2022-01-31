@@ -1,0 +1,69 @@
+---
+# tasks file for ansible-proxmox-linux-vm-provisioning
+- name: check if the VM already exists
+  shell: 
+    cmd: "/usr/bin/pvesh get /cluster/resources --type vm | grep 'qemu/{{ hostvars[item].vmid }}'"
+  register: vm_does_not_exist
+  become: yes
+  ignore_errors: yes
+
+- name: register variable that tells whether a VM has been created or not
+  set_fact:
+    vm_created: true
+  when: (hostvars[item].force_recreate | bool) or (vm_does_not_exist.rc == 1)
+
+- name: delete vm if needed
+  block:
+    - name: stop vm
+      shell:
+        cmd: "/usr/sbin/qm stop {{ hostvars[item].vmid }}"
+    - name: Wait for vm to be stopped
+      shell:
+        cmd: "/usr/sbin/qm wait {{ hostvars[item].vmid }}"    
+      async: 180
+      poll: 10 
+    - name: delete VM
+      shell:
+        cmd: "/usr/sbin/qm destroy {{ hostvars[item].vmid }} --purge 1"
+    - name: pause for the vm to be deleted
+      pause:
+        seconds: "{{ hostvars[item].template_cloning_timeout_sec }}"
+  become: yes
+  when: (hostvars[item].force_recreate | bool) and (vm_does_not_exist.rc == 0)
+
+- name: create and start VM if the VM does not exist yet
+  block:
+    - name: make sure the cloud-init folder exists
+      file:
+        path: "{{ hostvars[item].proxmox_storage_path }}/snippets"
+        state: directory
+    - name: create cloud-init user data file
+      template:
+        src: user-config.yml.j2
+        dest: "{{ hostvars[item].proxmox_storage_path }}/snippets/vm-{{ hostvars[item].vmid }}-cloud-init-user-config.yml"
+    - name: clone template
+      shell: 
+        cmd: "/usr/sbin/qm clone {{ hostvars[item].template_vmid }} {{ hostvars[item].vmid }} --name {{ hostvars[item].vm_name }} --full 1 --format qcow2"
+    - name: increase main disk size if needed
+      shell: 
+        cmd: '/usr/sbin/qm resize {{ hostvars[item].vmid }} scsi0 {{ hostvars[item].vm_disk_additional_size }}'
+      when: hostvars[item].vm_disk_additional_size is defined
+    - name: configure VM IP and gateway
+      shell: 
+        cmd: '/usr/sbin/qm set {{ hostvars[item].vmid }} --ipconfig0 ip={{ item }}{{ hostvars[item].ip_address_mask }},gw={{ hostvars[item].gateway }}'
+    - name: configure VM network - no VLAN
+      shell: 
+        cmd: '/usr/sbin/qm set {{ hostvars[item].vmid }} --net0 model=virtio,bridge={{ hostvars[item].vm_network_bridge }},firewall=0'
+      when: hostvars[item].vlan_tag is not defined
+    - name: configure VM network - with VLAN
+      shell: 
+        cmd: '/usr/sbin/qm set {{ hostvars[item].vmid }} --net0 model=virtio,bridge={{ hostvars[item].vm_network_bridge }},firewall=0,tag={{ hostvars[item].vlan_tag }}'
+      when: hostvars[item].vlan_tag is defined
+    - name: add cloud-init configuration to the new VM
+      shell: 
+        cmd: '/usr/sbin/qm set {{ hostvars[item].vmid }} --cicustom "user={{ hostvars[item].proxmox_storage }}:snippets/vm-{{ hostvars[item].vmid }}-cloud-init-user-config.yml"'
+    - name: start VM
+      shell:
+        cmd:  "/usr/sbin/qm start {{ hostvars[item].vmid }}"
+  become: yes
+  when: (vm_does_not_exist.rc == 1) or (hostvars[item].force_recreate | bool)

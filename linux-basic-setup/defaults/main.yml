@@ -1,0 +1,7 @@
+---
+# defaults file for ansible-linux-basic-setup
+keyboard_locale: gb
+packages_to_install:
+  - nano
+  - python3-pip
+ssh_with_password: yes

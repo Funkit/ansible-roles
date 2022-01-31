@@ -1,0 +1,14 @@
+---
+# defaults file for ansible-proxmox-centos-template
+cloud_init_pause_seconds: 3600
+convert_to_template: yes
+default_boot_order: scsi0;ide1;net0
+proxmox_storage: local
+proxmox_storage_path: /var/lib/vz
+rebuild: no
+vm_cores: 2
+vm_guest_agent: enabled=1,fstrim_cloned_disks=1,type=virtio
+vm_network_bridge: vmbr0
+vm_os_type: l26
+vm_ram_mb: 2048
+vm_sockets: 1

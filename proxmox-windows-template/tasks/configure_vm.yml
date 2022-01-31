@@ -1,0 +1,24 @@
+---
+# tasks file for ansible-proxmox-windows-template
+- name: create and configure VM
+  block:
+    - name: create VM
+      shell: 
+        cmd: "/usr/sbin/qm create {{ vm_template_vmid }} --name {{ vm_template_name }} --sockets {{ vm_sockets }} --cores {{ vm_cores }} --memory {{ vm_ram_mb }} --scsihw virtio-scsi-pci --scsi0 {{ vm_target_storage_id }}:{{ vm_disk_size_gb }},format={{ vm_disk_format }} --ostype {{ vm_os_type }} --agent {{ vm_guest_agent }}"
+    - name: set network interface - no VLAN
+      shell:
+        cmd: "/usr/sbin/qm set {{ vm_template_vmid }} --net0 model=virtio,bridge={{ vm_network_bridge }},firewall=0"
+      when: vlan_tag is not defined
+    - name: set network interface - with VLAN
+      shell:
+        cmd: "/usr/sbin/qm set {{ vm_template_vmid }} --net0 model=virtio,bridge={{ vm_network_bridge }},firewall=0,tag={{ vlan_tag }}"
+      when: vlan_tag is defined
+    - name: attach various Windows and provisioning ISOs
+      shell: 
+        cmd: "/usr/sbin/qm set {{ vm_template_vmid }} --ide1 file={{ os_iso_path }},media=cdrom --ide2 file=local:iso/{{ vm_template_name }}_provision.iso,media=cdrom"    
+    - name: attach virtIO ISO
+      shell: 
+        cmd: "/usr/sbin/qm set {{ vm_template_vmid }} --ide3 file=local:iso/{{ virtio_iso_name }},media=cdrom"
+    - name: set boot order
+      shell: '/usr/sbin/qm set {{ vm_template_vmid }} --boot "order=scsi0;ide1;net0"'
+  become: yes

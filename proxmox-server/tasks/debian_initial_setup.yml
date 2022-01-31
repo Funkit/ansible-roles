@@ -1,0 +1,15 @@
+---
+- name: add sbin to /etc/profile
+  lineinfile:
+    path: /etc/profile
+    state: present
+    line: 'export PATH="/usr/local/sbin:/usr/sbin:/sbin:$PATH"'
+
+- name: install python3-apt to make apt remove work
+  apt:
+    name: python3-apt
+
+- name: remove cloud-init
+  apt:
+    name: cloud-init
+    state: absent

@@ -1,0 +1,40 @@
+---
+- name: if delete_lease_files is set, confirm with user that he want the folder deleted
+  pause:
+    prompt: "{{ ansible_hostname }}: the current leases files will be deleted. Cancel now if needed, otherwise press enter"
+  when: delete_lease_files | bool
+
+- name: stop old container
+  community.general.docker_container:
+    name: "{{ container_name }}"
+    state: absent
+
+- name: delete old data folder if required
+  file:
+    path: "{{ dhcpd_folder }}"
+    state: absent
+  when: delete_lease_files | bool
+
+- name: make sure the destination data folder exists
+  file:
+    path: "{{ dhcpd_folder }}"
+    state: directory
+
+- name: copy external dhcpd.conf file to the server
+  copy:
+    src: "{{ dhcp_configuration_file }}"
+    dest: "{{ dhcpd_folder }}/dhcpd.conf"
+
+- name: start container
+  community.general.docker_container:
+    name: "{{ container_name }}"
+    image: networkboot/dhcpd
+    network_mode: host
+    command: "{{ ethernet_interface_name }}"
+    state: started
+    recreate: yes
+    restart: yes
+    restart_policy: always
+    cleanup: yes  
+    volumes:
+      - "{{ dhcpd_folder }}:/data"

@@ -1,0 +1,25 @@
+---
+- name: change APT sources from OLD_DIST to NEW_DIST
+  replace:
+    path: /etc/apt/sources.list
+    regexp: '(.*){{ old_debian_dist }}(.*)'
+    replace: '\1{{ new_debian_dist }}\2'
+
+- name: distribution update
+  apt:
+    update_cache: yes
+    upgrade: full
+
+- name: cleanup old packages
+  apt:
+    autoremove: yes
+- name: ask for confirmation on the boot disk
+  pause:
+    prompt: "The target boot disk for {{ ansible_default_ipv4.address }} is {{ boot_disk }}. Please check the MAAS or on the machine itself the current boot setup to confirm it is the right disk"
+- name: update grub (necessary for Dell servers with RAID controllers)
+  block:
+    - name: select boot disk
+      command: "grub-install {{ boot_disk }}" 
+    - name: update grub
+      command: "update-grub" 
+  when: update_grub

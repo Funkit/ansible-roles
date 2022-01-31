@@ -1,0 +1,8 @@
+---
+# tasks file for ansible-docker
+
+- include_tasks: debian_ubuntu_install_docker.yml
+  when: ansible_distribution == "Ubuntu" or ansible_distribution == "Debian"
+
+- include_tasks: centos_oracle_linux_install_docker.yml
+  when: ansible_distribution == "OracleLinux" or ansible_distribution == "CentOS"

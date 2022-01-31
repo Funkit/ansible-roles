@@ -1,0 +1,6 @@
+---
+# task file for ansible-proxmox-linux-template 
+- name: remove uploaded cloud image after import
+  file:
+    path: "/tmp/{{ cloud_image_name }}"
+    state: absent

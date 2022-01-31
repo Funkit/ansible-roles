@@ -1,0 +1,5 @@
+---
+delete_lease_files: no
+dhcpd_folder: /opt/dhcpd
+container_name: dhcp
+ethernet_interface_name: eth0

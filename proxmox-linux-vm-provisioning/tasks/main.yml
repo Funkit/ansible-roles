@@ -1,0 +1,29 @@
+---
+- name: create and start VM if the VM does not exist yet
+  include_tasks: hypervisor_tasks.yml
+  with_items: "{{ groups[vm_group_name] }}"
+  when: (groups[vm_group_name] is defined) and (groups[vm_group_name] | length > 0)
+
+# The condition for pausing is doing the following:
+# Get the value of variable vm_created for all hypervisors in a list,
+# Find the number of occurrences of 'True' (text value of the true boolean). 
+# If it is different from 0, at least one VM has been created, thus the pause.
+- name: pause for the VMs to start
+  pause:
+    seconds: "{{ vm_setup_delay_sec }}"
+  when: (ansible_play_hosts_all|map('extract', hostvars, 'vm_created') | list | regex_findall('True') | length) > 0
+
+- name: remove old VMs ssh keyprint
+  shell:
+    cmd: '/usr/bin/ssh-keygen -R {{ item }}'
+  ignore_errors: yes
+  delegate_to: 127.0.0.1
+  with_items: "{{ groups[vm_group_name] }}"
+  when: (groups[vm_group_name] is defined) and (groups[vm_group_name] | length > 0)
+
+- name: add VMs ssh keyprint
+  shell:
+    cmd: '/usr/bin/ssh-keyscan {{ item }} >> ~/.ssh/known_hosts'
+  delegate_to: 127.0.0.1
+  with_items: "{{ groups[vm_group_name] }}"
+  when: (groups[vm_group_name] is defined) and (groups[vm_group_name] | length > 0)

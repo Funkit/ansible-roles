@@ -1,0 +1,15 @@
+---
+- name: remove container and files
+  block:
+    - name: remove coredns container
+      community.general.docker_container:
+        name: "{{ container_name }}"
+        state: absent
+    - name: delete old Corefile
+      file:
+        path: "{{ coredns_folder }}/Corefile"
+        state: absent
+    - name: delete old zone files
+      file:
+        path: "{{ coredns_folder }}/host_file"
+        state: absent

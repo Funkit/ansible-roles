@@ -1,0 +1,42 @@
+---
+# tasks file for ansible-proxmox-windows-template
+- name: set temporary folder path as variable
+  set_fact:
+    temp_subfolder: "/tmp/{{ lookup('pipe', 'date -d \"now\" +\"windows_template_files_%Y%m%d\"') }}"
+
+- name: create temporary directory on the server to store the various deployment files
+  file:
+    path: "{{ temp_subfolder }}"
+    state: directory
+
+- name: download virtIO drivers
+  get_url:
+    url: "{{ virtio_download_url }}"
+    dest: "{{ pve_host_local_storage_path }}/template/iso/{{ virtio_iso_name }}"
+  become: yes
+
+- name: Copy all necessary provisioning files to the hypervisor
+  import_tasks: copy_provisioning_files.yml
+
+- name: modify default ssh config
+  import_tasks: modify_default_ssh_settings.yml
+
+- name: Create ISO file with scripts, OpenSSH & answer file 
+  command: "genisoimage -J -r -o {{ pve_host_local_storage_path }}/template/iso/{{vm_template_name}}_provision.iso {{ temp_subfolder }}/"
+  become: yes
+
+- name: Pre boot VM setup
+  import_tasks: configure_vm.yml
+
+- name: Start VM
+  shell: "/usr/sbin/qm start {{ vm_template_vmid }}"
+  become: yes
+
+- name: Wait for OS install, config, sysprep. Up to 120 min.
+  shell: "/usr/sbin/qm wait {{ vm_template_vmid }}"    
+  async: 7200
+  poll: 30 
+  become: yes 
+
+- name: Clean all temporary folders
+  import_tasks: cleanup.yml  

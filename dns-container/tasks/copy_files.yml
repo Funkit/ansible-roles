@@ -1,0 +1,29 @@
+---
+- name: make coredns folder
+  file:
+    path: "{{ coredns_folder }}"
+    state: directory 
+- name: write DNS zone files
+  lineinfile:
+    create: yes
+    mode: '664'
+    path: "{{ coredns_folder }}/host_file"
+    regexp: '.+ {{ equipment.hostname }}.{{ equipment.dns_zone }}'
+    line: "{{ equipment.ipaddr }} {{ equipment.hostname }}.{{ equipment.dns_zone }}"
+  when: equipment.hostname != ""
+  loop: "{{ equipment_info.list }}"
+  loop_control:
+    loop_var: equipment
+- name: register zones in a list
+  set_fact:
+    zones_list: "{{ zones_list }} + [ '{{ equipment.dns_zone }}' ]"
+  loop: "{{ equipment_info.list }}"
+  loop_control:
+    loop_var: equipment
+- name: delete duplicates and convert list to string for coredns except module
+  set_fact:
+    zones_list_string: "{{ zones_list | unique | join(' ') }}"
+- name: template out corefile
+  template:
+    src: Corefile.j2
+    dest: "{{ coredns_folder }}/Corefile"

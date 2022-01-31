@@ -1,0 +1,25 @@
+---
+# tasks file for ansible-proxmox-windows-template
+- name: Template out unattend answer file
+  template:
+    src: "answer_files/{{ windows_server_version }}/autounattend.xml.tpl"
+    dest: "{{ temp_subfolder }}/autounattend.xml"
+- name: download OpenSSH
+  block:
+    - name: download zip
+      get_url:
+        url: "{{ openssh_download_url }}"
+        dest: "{{ temp_subfolder }}"   
+    - name: install unzip
+      package:
+        name: unzip
+    - name: unzip
+      unarchive:
+        src: "{{ temp_subfolder }}/OpenSSH-Win64.zip"
+        dest: "{{ temp_subfolder }}"
+        remote_src: yes
+    - name: remove zip
+      file:
+        path: "{{ temp_subfolder }}/OpenSSH-Win64.zip"
+        state: absent
+  become: yes 

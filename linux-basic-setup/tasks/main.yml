@@ -1,0 +1,15 @@
+---
+# tasks file for ansible-linux-basic-setup
+- name: set keyboard layout
+  shell:
+    cmd: "/usr/bin/localectl set-keymap {{ keyboard_locale }}"
+    
+- name: admin user setup
+  include_tasks: user_setup.yml
+
+- name: enable or disable password ssh login
+  include_tasks: ssh_password_setup.yml
+
+- name: install packages
+  package:
+    name: "{{ packages_to_install }}"

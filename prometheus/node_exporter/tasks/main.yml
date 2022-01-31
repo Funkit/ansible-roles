@@ -1,0 +1,51 @@
+- name: download and extract exporter
+  import_tasks: download_and_extract.yml
+  delegate_to: 127.0.0.1
+  run_once: yes
+
+- name: register services list
+  service_facts:
+
+- name: create exporter user
+  user:
+    name: "{{ service_user }}"
+    comment: Prometheus exporter service user
+    append: yes
+    create_home: no
+    generate_ssh_key: no
+    shell: /bin/false
+  become: yes
+  when: "'node_exporter.service' not in services"
+
+- name: copy the executable
+  copy:
+    src: "node_exporter-{{ exporter_version }}.linux-amd64/node_exporter"
+    dest: /usr/local/bin
+    owner: "{{ service_user }}"
+    group: "{{ service_user }}"
+    mode: '744'
+  become: yes
+  when: "'node_exporter.service' not in services"
+
+- name: Open the corresponding firewall port
+  ansible.posix.firewalld:
+    port: 9100/tcp
+    permanent: yes
+    state: enabled
+    immediate: yes
+  become: yes
+
+- name: template out the service file
+  template:
+    src: node_exporter.service.j2
+    dest: /etc/systemd/system/node_exporter.service
+  become: yes
+  when: "'node_exporter.service' not in services"
+  
+- name: start service
+  systemd:
+    daemon_reload: yes
+    name: node_exporter
+    enabled: yes
+    state: started
+  become: yes
