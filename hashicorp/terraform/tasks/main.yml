@@ -20,5 +20,14 @@
     src: "/tmp/terraform_{{ terraform_version }}_linux_amd64.zip"
     dest: "/usr/local/bin"
     remote_src: yes
-
+- name: delete archive
+  file:
+    path: "/tmp/terraform_{{ terraform_version }}_linux_amd64.zip"
+    state: absent
+- name: delete locally downloaded software
+  file:
+    path: "{{ playbook_dir }}/terraform_{{ terraform_version }}_linux_amd64.zip"
+    state: absent
+  delegate_to: 127.0.0.1
+  run_once: yes
 
