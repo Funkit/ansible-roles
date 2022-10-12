@@ -1,0 +1,24 @@
+---
+# tasks file for hashicorp/terraform role
+
+- name: download software
+  get_url:
+    url: "https://releases.hashicorp.com/terraform/{{ terraform_version }}/terraform_{{ terraform_version }}_linux_amd64.zip"
+    dest: "{{ playbook_dir }}"
+  delegate_to: 127.0.0.1
+  run_once: yes
+- name: copy software on machines
+  copy:
+    src: "{{ playbook_dir }}/terraform_{{ terraform_version }}_linux_amd64.zip"
+    dest: "/tmp"
+- name: make sure unzip is installed
+  package:
+    name: unzip
+  become: yes
+- name: extract the executable
+  unarchive:
+    src: "/tmp/terraform_{{ terraform_version }}_linux_amd64.zip"
+    dest: "/usr/local/bin"
+    remote_src: yes
+
+
