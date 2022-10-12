@@ -1,0 +1,6 @@
+---
+# defaults file for google/gcloud
+gcloud_cli_additional_components:
+  - google-cloud-cli-terraform-validator
+  - google-cloud-cli-gke-gcloud-auth-plugin
+  - kubectl
