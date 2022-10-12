@@ -28,11 +28,11 @@
   when: build_or_rebuild_template
 
 - name: delete old vm if needed
-  include_tasks: delete_vm.yml 
+  include_tasks: delete_vm.yml
   when: (command_output.rc == 0) and rebuild
 
 - name: create, customize VM
-  include_tasks: create_vm.yml 
+  include_tasks: create_vm.yml
   when: build_or_rebuild_template
   
 - name: start VM
