@@ -17,14 +17,18 @@
       - curl
       - gnupg-agent
       - software-properties-common
-- name: add docker official GPG key
-  apt_key:
-    url: "https://download.docker.com/linux/{{ ansible_distribution | lower }}/gpg"
-    id: "{{ docker_repository_gpg_key_fingerprint }}"
-    state: present
-- name: add docker stable repository
-  apt_repository:
-    repo: "deb [arch=amd64] https://download.docker.com/linux/{{ ansible_distribution | lower }} {{ ansible_distribution_release }} stable"
+- name: create keyring folder if not already available
+  file:
+    path: "{{ gpg_key_path }}"
+    state: directory
+- name: Add docker repository
+  block:
+    - name: Add docker GPG key
+      shell: "curl -fsSL https://download.docker.com/linux/{{ ansible_distribution | lower }}/gpg | sudo gpg --dearmor -o {{ gpg_key_path }}/docker.gpg"
+    - name: Add docker repository
+      apt_repository:
+        repo: "deb [arch=amd64 signed-by={{ gpg_key_path }}/docker.gpg] https://download.docker.com/linux/{{ ansible_distribution | lower }} {{ ansible_distribution_release }} stable"
+        state: present
 - name: install docker
   apt:
     update_cache: yes
@@ -32,3 +36,4 @@
       - docker-ce
       - docker-ce-cli
       - containerd.io
+      - docker-compose-plugin

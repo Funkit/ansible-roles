@@ -5,10 +5,7 @@ This role installs docker for Debian, Ubuntu, CentOS and Oracle Linux distributi
 
 This role works with:
 
-- Centos 8
-- Oracle Linux 8
-- Debian 10
-- Ubuntu 20
+- Debian 11.4
 
 Requirements
 ------------
@@ -20,7 +17,7 @@ Role Variables
 
 **Optional:**
 
-- `docker_repository_gpg_key_fingerprint`: for Debian/Ubuntu install only. Defaults to `9DC8 5822 9FC7 DD38 854A E2D8 8D81 803C 0EBF CD88`.
+- `gpg_key_path`: directory where to store the GPG key. Defaults to `/etc/apt/keyrings`.
 
 Dependencies
 ------------
