@@ -18,6 +18,7 @@ Role Variables
 **Optional:**
 
 - `gcloud_cli_additional_components`: list of additional components on top of gcloud CLI to install.
+- `gpg_key_path`: directory where to store the GPG key. Defaults to `/etc/apt/keyrings`.
 
 Dependencies
 ------------

@@ -1,5 +1,6 @@
 ---
 # defaults file for google/gcloud
+gpg_key_path: "/etc/apt/keyrings"
 gcloud_cli_additional_components:
   - google-cloud-cli-terraform-validator
   - google-cloud-cli-gke-gcloud-auth-plugin

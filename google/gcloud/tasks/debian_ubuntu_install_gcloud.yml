@@ -8,16 +8,28 @@
       - curl
       - gnupg-agent
       - software-properties-common
+- name: create keyring folder if not already available
+  file:
+    path: "{{ gpg_key_path }}"
+    state: directory
 - name: Add gcloud repository
   block:
+    - name: Add google cloud SDK GPG key
+      shell: "curl https://packages.cloud.google.com/apt/doc/apt-key.gpg | sudo tee {{ gpg_key_path }}/cloud.google.gpg"
     - name: Add google cloud SDK repository
       apt_repository:
-        repo: "deb https://packages.cloud.google.com/apt cloud-sdk main"
+        repo: "deb [signed-by={{ gpg_key_path }}/cloud.google.gpg] https://packages.cloud.google.com/apt cloud-sdk main"
         state: present
-    - name: Add google cloud GPG key
-      get_url:
-        url: https://packages.cloud.google.com/apt/doc/apt-key.gpg
-        dest: /etc/apt/trusted.gpg.d/googlecloud.gpg
+#- name: Add gcloud repository
+#  block:
+#    - name: Add google cloud SDK repository
+#      apt_repository:
+#        repo: "deb https://packages.cloud.google.com/apt cloud-sdk main"
+#        state: present
+#    - name: Add google cloud GPG key
+#      get_url:
+#        url: https://packages.cloud.google.com/apt/doc/apt-key.gpg
+#        dest: /etc/apt/trusted.gpg.d/googlecloud.gpg
 - name: install google-cloud-cli
   apt:
     update_cache: yes
